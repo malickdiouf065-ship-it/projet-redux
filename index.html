@@ -1,0 +1,695 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>✨ ToDo · Redux élégant</title>
+  <!-- Redux via CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/redux@4.2.1/dist/redux.min.js"></script>
+  <!-- Font Awesome pour les icônes -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    }
+
+    body {
+      min-height: 100vh;
+      background: linear-gradient(145deg, #0b0f1c 0%, #1a1f2f 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1.5rem;
+    }
+
+    /* Carte principale */
+    .app-container {
+      width: 100%;
+      max-width: 780px;
+      background: rgba(22, 28, 40, 0.85);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      border-radius: 2.5rem;
+      box-shadow: 0 35px 70px -15px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.04) inset;
+      padding: 2.5rem 2rem 2.2rem;
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      transition: all 0.2s;
+    }
+
+    /* En-tête */
+    .header {
+      display: flex;
+      align-items: center;
+      gap: 0.8rem;
+      margin-bottom: 2rem;
+    }
+
+    .header h1 {
+      font-size: 2rem;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+      background: linear-gradient(135deg, #fff 0%, #b0c4ff 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      display: flex;
+      align-items: center;
+      gap: 0.7rem;
+    }
+
+    .header i {
+      font-size: 2rem;
+      color: #7c9aff;
+      filter: drop-shadow(0 0 10px rgba(124, 154, 255, 0.5));
+    }
+
+    /* Formulaire d'ajout */
+    .add-task-form {
+      display: flex;
+      gap: 1rem;
+      margin-bottom: 2rem;
+      background: rgba(255, 255, 255, 0.04);
+      padding: 0.6rem 0.6rem 0.6rem 1.5rem;
+      border-radius: 4rem;
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      transition: all 0.3s;
+    }
+
+    .add-task-form:focus-within {
+      border-color: #7c9aff;
+      box-shadow: 0 0 0 3px rgba(124, 154, 255, 0.2);
+      background: rgba(255, 255, 255, 0.07);
+    }
+
+    .add-task-form input {
+      flex: 1;
+      background: transparent;
+      border: none;
+      outline: none;
+      font-size: 1.1rem;
+      color: #f0f3ff;
+      padding: 0.8rem 0;
+      font-weight: 400;
+    }
+
+    .add-task-form input::placeholder {
+      color: #7e8a9e;
+      font-weight: 300;
+      letter-spacing: 0.02em;
+    }
+
+    .add-task-form button {
+      background: linear-gradient(135deg, #5f7cff 0%, #9b6eff 100%);
+      border: none;
+      width: 3.6rem;
+      height: 3.6rem;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      color: white;
+      font-size: 1.3rem;
+      box-shadow: 0 8px 18px -6px rgba(95, 124, 255, 0.4);
+    }
+
+    .add-task-form button:hover {
+      transform: scale(1.04);
+      filter: brightness(1.15);
+      box-shadow: 0 10px 22px -6px rgba(95, 124, 255, 0.7);
+    }
+
+    .add-task-form button:active {
+      transform: scale(0.97);
+    }
+
+    /* Filtres */
+    .filters {
+      display: flex;
+      gap: 0.6rem;
+      margin-bottom: 2rem;
+      background: rgba(0, 0, 0, 0.25);
+      padding: 0.4rem;
+      border-radius: 3rem;
+      width: fit-content;
+    }
+
+    .filter-btn {
+      padding: 0.7rem 1.6rem;
+      border-radius: 2.5rem;
+      border: none;
+      background: transparent;
+      color: #a8b2c9;
+      font-weight: 500;
+      font-size: 0.9rem;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      letter-spacing: 0.01em;
+    }
+
+    .filter-btn i {
+      font-size: 0.9rem;
+    }
+
+    .filter-btn.active {
+      background: rgba(124, 154, 255, 0.2);
+      color: #c7d4ff;
+      box-shadow: 0 0 0 1px rgba(124, 154, 255, 0.3);
+    }
+
+    .filter-btn:hover:not(.active) {
+      background: rgba(255, 255, 255, 0.04);
+      color: #d0d9f0;
+    }
+
+    /* Liste des tâches */
+    .task-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.85rem;
+      margin-bottom: 2rem;
+      max-height: 400px;
+      overflow-y: auto;
+      padding-right: 0.3rem;
+    }
+
+    .task-list::-webkit-scrollbar {
+      width: 5px;
+    }
+
+    .task-list::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    .task-list::-webkit-scrollbar-thumb {
+      background: #2f3a4e;
+      border-radius: 10px;
+    }
+
+    /* Élément tâche */
+    .task-item {
+      display: flex;
+      align-items: center;
+      background: rgba(255, 255, 255, 0.03);
+      border-radius: 1.5rem;
+      padding: 0.9rem 1.3rem;
+      border: 1px solid rgba(255, 255, 255, 0.04);
+      transition: all 0.2s;
+      animation: fadeIn 0.3s ease;
+    }
+
+    .task-item:hover {
+      background: rgba(255, 255, 255, 0.06);
+      border-color: rgba(255, 255, 255, 0.08);
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .task-check {
+      margin-right: 1rem;
+      width: 1.8rem;
+      height: 1.8rem;
+      border-radius: 50%;
+      border: 2px solid #3e4a60;
+      background: transparent;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.2s;
+      color: white;
+      font-size: 1rem;
+      flex-shrink: 0;
+    }
+
+    .task-check.done {
+      background: linear-gradient(135deg, #5f7cff, #9b6eff);
+      border-color: transparent;
+    }
+
+    .task-check i {
+      opacity: 0;
+      transition: opacity 0.2s;
+    }
+
+    .task-check.done i {
+      opacity: 1;
+    }
+
+    .task-description {
+      flex: 1;
+      color: #e6ecff;
+      font-size: 1.05rem;
+      font-weight: 400;
+      word-break: break-word;
+      padding: 0.2rem 0;
+    }
+
+    .task-description.done {
+      text-decoration: line-through;
+      color: #7e8a9e;
+    }
+
+    /* Édition inline */
+    .edit-input {
+      flex: 1;
+      background: rgba(0, 0, 0, 0.4);
+      border: 1px solid #5f7cff;
+      border-radius: 2rem;
+      padding: 0.5rem 1.2rem;
+      color: white;
+      font-size: 1.05rem;
+      outline: none;
+      font-family: inherit;
+      margin-right: 0.5rem;
+    }
+
+    .task-actions {
+      display: flex;
+      gap: 0.5rem;
+      margin-left: 0.8rem;
+      flex-shrink: 0;
+    }
+
+    .task-actions button {
+      background: transparent;
+      border: none;
+      width: 2.2rem;
+      height: 2.2rem;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      color: #8f9bb3;
+      transition: all 0.2s;
+      font-size: 0.95rem;
+    }
+
+    .task-actions button:hover {
+      background: rgba(255, 255, 255, 0.08);
+      color: #cdd9ff;
+    }
+
+    .task-actions .delete-btn:hover {
+      background: rgba(255, 80, 80, 0.15);
+      color: #ff7b7b;
+    }
+
+    .task-actions .edit-btn:hover {
+      background: rgba(95, 124, 255, 0.15);
+      color: #a0b5ff;
+    }
+
+    /* État vide */
+    .empty-state {
+      text-align: center;
+      padding: 3rem 1rem;
+      color: #5e6a80;
+      font-size: 1.1rem;
+      font-weight: 300;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .empty-state i {
+      font-size: 3rem;
+      opacity: 0.4;
+    }
+
+    /* Compteur */
+    .stats {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-top: 0.8rem;
+      border-top: 1px solid rgba(255, 255, 255, 0.06);
+      color: #7e8a9e;
+      font-size: 0.9rem;
+      font-weight: 400;
+    }
+
+    .stats span {
+      color: #b7c2da;
+      font-weight: 500;
+    }
+
+    /* Responsive */
+    @media (max-width: 550px) {
+      .app-container {
+        padding: 1.8rem 1.2rem;
+        border-radius: 2rem;
+      }
+      .header h1 { font-size: 1.6rem; }
+      .add-task-form { padding-left: 1rem; }
+      .add-task-form button { width: 3rem; height: 3rem; font-size: 1.1rem; }
+      .filter-btn { padding: 0.6rem 1rem; font-size: 0.8rem; }
+      .task-item { padding: 0.7rem 1rem; }
+    }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script>
+    // ======================== REDUX SETUP ========================
+    // Actions
+    const ADD_TASK = 'ADD_TASK';
+    const DELETE_TASK = 'DELETE_TASK';
+    const TOGGLE_TASK = 'TOGGLE_TASK';
+    const EDIT_TASK = 'EDIT_TASK';
+    const SET_FILTER = 'SET_FILTER';
+
+    // Action creators
+    const addTask = (description) => ({
+      type: ADD_TASK,
+      payload: { description }
+    });
+
+    const deleteTask = (id) => ({
+      type: DELETE_TASK,
+      payload: { id }
+    });
+
+    const toggleTask = (id) => ({
+      type: TOGGLE_TASK,
+      payload: { id }
+    });
+
+    const editTask = (id, description) => ({
+      type: EDIT_TASK,
+      payload: { id, description }
+    });
+
+    const setFilter = (filter) => ({
+      type: SET_FILTER,
+      payload: { filter }
+    });
+
+    // État initial
+    const initialState = {
+      tasks: [
+        { id: 1, description: "Découvrir Redux avec élégance", isDone: false },
+        { id: 2, description: "Créer une todo-list magnifique", isDone: true },
+        { id: 3, description: "Ajouter une tâche et admirer le design", isDone: false }
+      ],
+      filter: 'all', // 'all', 'done', 'not_done'
+      nextId: 4
+    };
+
+    // Reducer
+    const tasksReducer = (state = initialState, action) => {
+      switch (action.type) {
+        case ADD_TASK: {
+          const newTask = {
+            id: state.nextId,
+            description: action.payload.description.trim(),
+            isDone: false
+          };
+          return {
+            ...state,
+            tasks: [...state.tasks, newTask],
+            nextId: state.nextId + 1
+          };
+        }
+        case DELETE_TASK:
+          return {
+            ...state,
+            tasks: state.tasks.filter(task => task.id !== action.payload.id)
+          };
+        case TOGGLE_TASK:
+          return {
+            ...state,
+            tasks: state.tasks.map(task =>
+              task.id === action.payload.id ? { ...task, isDone: !task.isDone } : task
+            )
+          };
+        case EDIT_TASK:
+          return {
+            ...state,
+            tasks: state.tasks.map(task =>
+              task.id === action.payload.id ? { ...task, description: action.payload.description } : task
+            )
+          };
+        case SET_FILTER:
+          return {
+            ...state,
+            filter: action.payload.filter
+          };
+        default:
+          return state;
+      }
+    };
+
+    // Création du store Redux
+    const store = Redux.createStore(tasksReducer);
+
+    // ======================== COMPOSANTS REACT-LIKE (Vanilla JS) ========================
+    // Nous utilisons une approche impérative simple pour rendre l'interface,
+    // mais avec la gestion d'état centralisée par Redux.
+
+    const root = document.getElementById('root');
+
+    // Fonction utilitaire pour créer des éléments
+    function el(tag, attrs = {}, children = []) {
+      const element = document.createElement(tag);
+      Object.entries(attrs).forEach(([key, value]) => {
+        if (key === 'className') element.className = value;
+        else if (key === 'onclick') element.onclick = value;
+        else if (key === 'onkeydown') element.onkeydown = value;
+        else if (key.startsWith('data-')) element.setAttribute(key, value);
+        else if (key === 'style') element.style.cssText = value;
+        else element.setAttribute(key, value);
+      });
+      if (typeof children === 'string') {
+        element.textContent = children;
+      } else if (Array.isArray(children)) {
+        children.forEach(child => {
+          if (typeof child === 'string') element.appendChild(document.createTextNode(child));
+          else if (child instanceof Node) element.appendChild(child);
+        });
+      }
+      return element;
+    }
+
+    // Composant AddTask
+    function AddTask() {
+      const form = el('form', { className: 'add-task-form', onsubmit: (e) => {
+        e.preventDefault();
+        const input = form.querySelector('input');
+        const description = input.value.trim();
+        if (description) {
+          store.dispatch(addTask(description));
+          input.value = '';
+        }
+      }});
+
+      const input = el('input', {
+        type: 'text',
+        placeholder: 'Ajouter une nouvelle tâche...',
+        'aria-label': 'Nouvelle tâche'
+      });
+
+      const button = el('button', { type: 'submit' }, [
+        el('i', { className: 'fas fa-plus' })
+      ]);
+
+      form.appendChild(input);
+      form.appendChild(button);
+      return form;
+    }
+
+    // Composant Task (élément individuel)
+    function TaskItem(task) {
+      const container = el('div', { className: 'task-item', 'data-id': task.id });
+      const isEditing = { value: false }; // état local pour l'édition
+
+      // Checkbox personnalisée
+      const checkBtn = el('div', {
+        className: `task-check ${task.isDone ? 'done' : ''}`,
+        onclick: () => store.dispatch(toggleTask(task.id))
+      }, [el('i', { className: 'fas fa-check' })]);
+
+      // Description ou champ d'édition
+      let descriptionEl;
+      let editInput = null;
+
+      const renderDescription = () => {
+        if (isEditing.value) {
+          if (!editInput) {
+            editInput = el('input', {
+              type: 'text',
+              className: 'edit-input',
+              value: task.description,
+              onkeydown: (e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  const newDesc = editInput.value.trim();
+                  if (newDesc) store.dispatch(editTask(task.id, newDesc));
+                  isEditing.value = false;
+                  renderTaskContent();
+                } else if (e.key === 'Escape') {
+                  isEditing.value = false;
+                  renderTaskContent();
+                }
+              }
+            });
+          } else {
+            editInput.value = task.description;
+          }
+          descriptionEl = editInput;
+        } else {
+          descriptionEl = el('span', {
+            className: `task-description ${task.isDone ? 'done' : ''}`
+          }, task.description);
+        }
+      };
+
+      // Actions (éditer, supprimer)
+      const actionsEl = el('div', { className: 'task-actions' });
+
+      const editBtn = el('button', {
+        className: 'edit-btn',
+        title: 'Modifier',
+        onclick: () => {
+          isEditing.value = true;
+          renderTaskContent();
+          if (editInput) {
+            editInput.focus();
+            editInput.select();
+          }
+        }
+      }, [el('i', { className: 'fas fa-pen' })]);
+
+      const deleteBtn = el('button', {
+        className: 'delete-btn',
+        title: 'Supprimer',
+        onclick: () => store.dispatch(deleteTask(task.id))
+      }, [el('i', { className: 'fas fa-trash-alt' })]);
+
+      actionsEl.appendChild(editBtn);
+      actionsEl.appendChild(deleteBtn);
+
+      // Assemblage
+      const contentWrapper = el('div', { style: 'display: flex; align-items: center; flex: 1; gap: 0.5rem;' });
+
+      function renderTaskContent() {
+        contentWrapper.innerHTML = '';
+        renderDescription();
+        contentWrapper.appendChild(checkBtn);
+        contentWrapper.appendChild(descriptionEl);
+        contentWrapper.appendChild(actionsEl);
+      }
+
+      renderTaskContent();
+      container.appendChild(contentWrapper);
+      return container;
+    }
+
+    // Composant ListTask
+    function ListTask(tasks, filter) {
+      // Filtrer les tâches selon le filtre actif
+      let filteredTasks = tasks;
+      if (filter === 'done') filteredTasks = tasks.filter(t => t.isDone);
+      else if (filter === 'not_done') filteredTasks = tasks.filter(t => !t.isDone);
+
+      const listEl = el('div', { className: 'task-list' });
+
+      if (filteredTasks.length === 0) {
+        listEl.appendChild(el('div', { className: 'empty-state' }, [
+          el('i', { className: 'fas fa-clipboard-list' }),
+          el('span', {}, filter === 'done' ? 'Aucune tâche terminée' : filter === 'not_done' ? 'Aucune tâche en cours' : 'Aucune tâche pour le moment')
+        ]));
+        return listEl;
+      }
+
+      filteredTasks.forEach(task => {
+        listEl.appendChild(TaskItem(task));
+      });
+
+      return listEl;
+    }
+
+    // Composant Filtres
+    function Filters(currentFilter) {
+      const container = el('div', { className: 'filters' });
+
+      const filterOptions = [
+        { key: 'all', label: 'Toutes', icon: 'fas fa-layer-group' },
+        { key: 'not_done', label: 'À faire', icon: 'fas fa-circle' },
+        { key: 'done', label: 'Terminées', icon: 'fas fa-check-circle' }
+      ];
+
+      filterOptions.forEach(opt => {
+        const btn = el('button', {
+          className: `filter-btn ${currentFilter === opt.key ? 'active' : ''}`,
+          onclick: () => store.dispatch(setFilter(opt.key))
+        }, [
+          el('i', { className: opt.icon }),
+          opt.label
+        ]);
+        container.appendChild(btn);
+      });
+
+      return container;
+    }
+
+    // Affichage des statistiques
+    function Stats(tasks) {
+      const total = tasks.length;
+      const done = tasks.filter(t => t.isDone).length;
+      return el('div', { className: 'stats' }, [
+        el('span', {}, `${done} / ${total} terminées`),
+        el('span', {}, `✨ ${total - done} restantes`)
+      ]);
+    }
+
+    // Rendu global
+    function render() {
+      const state = store.getState();
+      root.innerHTML = '';
+
+      const container = el('div', { className: 'app-container' });
+
+      // En-tête
+      const header = el('div', { className: 'header' }, [
+        el('i', { className: 'fas fa-check-double' }),
+        el('h1', {}, 'ToDo · Redux')
+      ]);
+      container.appendChild(header);
+
+      // Formulaire d'ajout
+      container.appendChild(AddTask());
+
+      // Filtres
+      container.appendChild(Filters(state.filter));
+
+      // Liste des tâches
+      container.appendChild(ListTask(state.tasks, state.filter));
+
+      // Statistiques
+      container.appendChild(Stats(state.tasks));
+
+      root.appendChild(container);
+    }
+
+    // S'abonner aux changements du store
+    store.subscribe(render);
+
+    // Rendu initial
+    render();
+  </script>
+</body>
+</html>
